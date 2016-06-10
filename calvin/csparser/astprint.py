@@ -122,6 +122,10 @@ class BracePrinter(object):
     def visit(self, node):
         print "{}( {} {} )".format(self._indentation(), node, node.ident)
 
+    @visitor.when(ast.Sysvar)
+    def visit(self, node):
+        print "{}( {} {} )".format(self._indentation(), node, node.ident)
+
     @visitor.when(ast.Value)
     def visit(self, node):
         print "{}( {} {} )".format(self._indentation(), node, node.value)

@@ -122,10 +122,13 @@ class Id(Node):
         self.children = None
         self.ident = kwargs.get('ident')
 
-class Sysvar(Id):
-    """docstring for IdNode"""
+class Sysvar(Node):
+    """docstring for Sysvar"""
     def __init__(self, **kwargs):
-        super(Id, self).__init__(**kwargs)
+        super(Sysvar, self).__init__(**kwargs)
+        self.children = None
+        self.ident = kwargs.get('ident')
+
 
 class Value(Node):
     """docstring for ValueNode"""
@@ -281,6 +284,7 @@ def node_decoder(o):
         'Node':Node,
         'Constant':Constant,
         'Id':Id,
+        'Sysvar':Sysvar,
         'Value':Value,
         'Assignment':Assignment,
         'IdValuePair':IdValuePair,

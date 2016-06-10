@@ -111,13 +111,16 @@ def _arguments(assignment, issue_tracker):
     # Assign and return args dictionary
     given_args = assignment.children
     args = {}
+    sysargs = {}
     for arg_node in given_args:
         if type(arg_node.arg) is ast.Value:
             args[arg_node.ident.ident] = arg_node.arg.value
+        elif type(arg_node.arg) is ast.Sysvar:
+            sysargs[arg_node.ident.ident] = arg_node.arg.ident
         else:
             reason = "Undefined identifier: '{}'".format(arg_node.arg.ident)
             issue_tracker.add_error(reason, arg_node.arg)
-    return args
+    return args, sysargs
 
 
 class IssueTracker(object):
@@ -448,7 +451,7 @@ class AppInfo(object):
 
         value = {}
         value['actor_type'] = node.actor_type
-        value['args'] = _arguments(node, self.issue_tracker)
+        value['args'],  value['sysargs'] = _arguments(node, self.issue_tracker)
         value['signature'] = _create_signature(node.actor_type, node.metadata)
 
         self.app_info['actors'][node.ident] = value
@@ -469,7 +472,7 @@ class ReplaceConstants(object):
 
     def process(self, root):
         constants = query(root, ast.Constant)
-        defined = {c.ident.ident: c.arg for c in constants if type(c.arg) is ast.Value}
+        defined = {c.ident.ident: c.arg for c in constants if type(c.arg) is ast.Value or type(c.arg) is ast.Sysvar}
         unresolved = [c for c in constants if type(c.arg) is ast.Id]
         seen = [c.ident.ident for c in unresolved]
         while True:

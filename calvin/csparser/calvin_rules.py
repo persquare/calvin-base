@@ -25,7 +25,7 @@ tokens = [
     'LBRACK', 'RBRACK',
     'DOT', 'COMMA', 'COLON',
     'GT', 'EQ',
-    'RARROW',
+    'RARROW', 'AT',
     'DOCSTRING',
     'FALSE', 'TRUE', 'NULL'
 
@@ -43,6 +43,7 @@ t_COLON = r':'
 t_GT = r'>'
 t_EQ = r'='
 t_RARROW = r'->'
+t_AT = r'@'
 # t_FALSE = r'false'
 # t_TRUE = r'true'
 # t_NULL = r'null'

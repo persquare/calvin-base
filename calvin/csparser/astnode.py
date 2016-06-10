@@ -122,6 +122,11 @@ class Id(Node):
         self.children = None
         self.ident = kwargs.get('ident')
 
+class Sysvar(Id):
+    """docstring for IdNode"""
+    def __init__(self, **kwargs):
+        super(Id, self).__init__(**kwargs)
+
 class Value(Node):
     """docstring for ValueNode"""
     def __init__(self, **kwargs):

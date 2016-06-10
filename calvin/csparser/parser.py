@@ -224,7 +224,8 @@ class CalvinParser(object):
 
     def p_argument(self, p):
         """argument : value
-                    | identifier"""
+                    | identifier
+                    | sysvar"""
         p[0] = p[1]
 
     def p_identifier(self, p):
@@ -308,6 +309,10 @@ class CalvinParser(object):
         else:
             p[0] = p[1]
 
+    def p_sysvar(self, p):
+        """sysvar : AT qualified_name"""
+        p[0] = ast.Sysvar(ident=p[2], debug_info=self.debug_info(p, 2))
+        
 
     # Error rule for syntax errors
     def p_error(self, token):

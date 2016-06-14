@@ -1,0 +1,6 @@
+
+trigger : std.Trigger(tick=@second data=@minute)
+
+print : io.Print()
+
+trigger.data > print.token

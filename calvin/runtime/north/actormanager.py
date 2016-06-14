@@ -44,7 +44,7 @@ class ActorManager(object):
         _log.exception("Actor '{}' not found".format(actor_id))
         raise Exception("Actor '{}' not found".format(actor_id))
 
-    def new(self, actor_type, args, state=None, prev_connections=None, connection_list=None, callback=None,
+    def new(self, actor_type, args, sysargs, state=None, prev_connections=None, connection_list=None, callback=None,
             signature=None, actor_def=None, security=None, access_decision=None, shadow_actor=False):
         """
         Instantiate an actor of type 'actor_type'. Parameters are passed in 'args',
@@ -63,9 +63,9 @@ class ActorManager(object):
 
         try:
             if state:
-                a = self._new_from_state(actor_type, state, actor_def, security, access_decision, shadow_actor)
+                a = self._new_from_state(actor_type, state, sysargs, actor_def, security, access_decision, shadow_actor)
             else:
-                a = self._new(actor_type, args, actor_def, security, access_decision, shadow_actor)
+                a = self._new(actor_type, args, sysargs, actor_def, security, access_decision, shadow_actor)
         except Exception as e:
             _log.exception("Actor creation failed")
             raise(e)
@@ -120,16 +120,39 @@ class ActorManager(object):
             a.set_authorization_checks(access_decision[1])
         return a
 
-    def _new(self, actor_type, args, actor_def=None, security=None, access_decision=None, shadow_actor=False):
+    def _merge_args(self, actor, args, sysargs):
+        """
+        Return a dict with argname:value pairs.
+        <actor> is newly created instance.
+        <args> is argument dictionary with argname:value  pairs
+        <sysargs> is argument dictionary with argname:@<name> pairs where @<name>
+            needs to be resolved.
+        """
+
+        combined_args = {}
+        combined_args.update(args)
+        # FIXME: Current assumption is that sysargs are in a.sysvars
+        lookup = {k:actor.sysvars[v] for k,v in sysargs.iteritems()}
+        combined_args.update(lookup)
+
+        return combined_args
+
+
+    def _new(self, actor_type, args, sysargs, actor_def=None, security=None, access_decision=None, shadow_actor=False):
         """Return an initialized actor in PENDING state, raises an exception on failure."""
         try:
-            a = self._new_actor(actor_type, actor_def, security=security, 
+            a = self._new_actor(actor_type, actor_def, security=security,
                                 access_decision=access_decision, shadow_actor=shadow_actor)
             # Now that required APIs are attached we can call init() which may use the APIs
             human_readable_name = args.pop('name', '')
             a.name = human_readable_name
             self.node.pm.add_ports_of_actor(a)
-            a.init(**args)
+
+            combined_args = self._merge_args(a, args, sysargs)
+
+            _log.info(combined_args)
+
+            a.init(**combined_args)
             a.setup_complete()
         except Exception as e:
             _log.exception("_new")
@@ -155,21 +178,21 @@ class ActorManager(object):
             actor_def, signer = self.lookup_and_verify(actor_type, security)
             requirements = actor_def.requires if hasattr(actor_def, "requires") else []
             self.check_requirements_and_sec_policy(requirements, security, state['id'],
-                                                   signer, migration_info, 
-                                                   CalvinCB(self.new, actor_type, None, 
+                                                   signer, migration_info,
+                                                   CalvinCB(self.new, actor_type, None,
                                                             state, prev_connections,
-                                                            callback=callback, 
-                                                            actor_def=actor_def, 
+                                                            callback=callback,
+                                                            actor_def=actor_def,
                                                             security=security))
         except Exception:
             # Still want to create shadow actor.
             self.new(actor_type, None, state, prev_connections, callback=callback, shadow_actor=True)
 
-    def _new_from_state(self, actor_type, state, actor_def, security, 
+    def _new_from_state(self, actor_type, state, sysargs, actor_def, security,
                              access_decision=None, shadow_actor=False):
         """Return a restored actor in PENDING state, raises an exception on failure."""
         try:
-            a = self._new_actor(actor_type, actor_def, actor_id=state['id'], security=security, 
+            a = self._new_actor(actor_type, actor_def, actor_id=state['id'], security=security,
                                 access_decision=access_decision, shadow_actor=shadow_actor)
             if '_shadow_args' in state:
                 # We were a shadow, do a full init
@@ -227,7 +250,7 @@ class ActorManager(object):
             raise Exception("Not known actor type: %s" % actor_type)
         return (actor_def, signer)
 
-    def check_requirements_and_sec_policy(self, requirements, security=None, actor_id=None, 
+    def check_requirements_and_sec_policy(self, requirements, security=None, actor_id=None,
                                           signer=None, decision_from_migration=None, callback=None):
         """Check requirements and security policy for actor."""
         # Check if node has the capabilities required by the actor.
@@ -237,12 +260,12 @@ class ActorManager(object):
         if security_needed_check():
             # Check if access is permitted for the actor by the security policy.
             # Will continue directly with callback if authorization is not enabled.
-            security.check_security_policy(callback, "actor", actor_id, ['runtime'] + requirements, 
+            security.check_security_policy(callback, "actor", actor_id, ['runtime'] + requirements,
                                            signer, decision_from_migration)
         else:
             callback()
 
-    def update_requirements(self, actor_id, requirements, extend=False, move=False, 
+    def update_requirements(self, actor_id, requirements, extend=False, move=False,
                             authorization_check=False, callback=None):
         """ Update requirements and trigger a potential migration """
         if actor_id not in self.actors:
@@ -273,7 +296,7 @@ class ActorManager(object):
                                  move=move, authorization_check=authorization_check, cb=callback, done=done)
         _log.analyze(self.node.id, "+ END", {'actor_id': actor_id, 'node_iter': str(node_iter)})
 
-    def _update_requirements_placements(self, node_iter, actor_id, possible_placements, done, move=False, 
+    def _update_requirements_placements(self, node_iter, actor_id, possible_placements, done, move=False,
                                         authorization_check=False, cb=None):
         _log.analyze(self.node.id, "+ BEGIN", {}, tb=True)
         actor = self.actors[actor_id]

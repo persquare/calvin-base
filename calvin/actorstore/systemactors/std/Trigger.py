@@ -62,3 +62,4 @@ class Trigger(Actor):
 
     action_priority = (start_timer, trigger)
     requires = ['calvinsys.events.timer']
+    sysvars = {'second':1, 'minute':60}

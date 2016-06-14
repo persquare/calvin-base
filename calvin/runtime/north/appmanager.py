@@ -643,11 +643,11 @@ class Deployer(object):
         """
         try:
             if not 'shadow_actor' in info:
-                self.node.am.check_requirements_and_sec_policy(info['requires'], 
-                                                               security=self.sec, 
+                self.node.am.check_requirements_and_sec_policy(info['requires'],
+                                                               security=self.sec,
                                                                signer=info['signer'],
-                                                               callback=CalvinCB(self.instantiate, 
-                                                                                 actor_name, info, 
+                                                               callback=CalvinCB(self.instantiate,
+                                                                                 actor_name, info,
                                                                                  actor_def, cb=cb))
                 return
             self.instantiate(actor_name, info, cb=cb)
@@ -667,8 +667,8 @@ class Deployer(object):
         """
         try:
             info['args']['name'] = actor_name
-            actor_id = self.node.am.new(actor_type=info['actor_type'], args=info['args'], signature=info['signature'], 
-                                        actor_def=actor_def, security=self.sec, access_decision=access_decision, 
+            actor_id = self.node.am.new(actor_type=info['actor_type'], args=info['args'], sysargs=info['sysargs'], signature=info['signature'],
+                                        actor_def=actor_def, security=self.sec, access_decision=access_decision,
                                         shadow_actor='shadow_actor' in info)
             if not actor_id:
                 raise Exception("Could not instantiate actor %s" % actor_name)

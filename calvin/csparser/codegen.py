@@ -472,7 +472,7 @@ class ReplaceConstants(object):
 
     def process(self, root):
         constants = query(root, ast.Constant)
-        defined = {c.ident.ident: c.arg for c in constants if type(c.arg) is ast.Value or type(c.arg) is ast.Sysvar}
+        defined = {c.ident.ident: c.arg for c in constants if type(c.arg) is ast.Value}
         unresolved = [c for c in constants if type(c.arg) is ast.Id]
         seen = [c.ident.ident for c in unresolved]
         while True:
